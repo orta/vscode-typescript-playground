@@ -1,0 +1,85 @@
+{
+	"name": "vscode-typescript-playground",
+	"displayName": "vscode-typescript-playground",
+	"description": "The TypeScript Playground in vscode",
+	"version": "0.0.1",
+	"enableProposedApi": true,
+	"preview": true,
+	"engines": {
+		"vscode": "^1.61.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"activationEvents": [
+		"onCommand:vscode-typescript-playground.startNewPlayground",
+		"onFileSystem:playfs",
+		"onView:vscode-typescript-playground.playground"
+	],
+	"browser": "./dist/web/extension.js",
+	"contributes": {
+		"commands": [
+			{
+				"command": "vscode-typescript-playground.startNewPlayground",
+				"title": "Start new Playground"
+			}
+		],
+		"menus": {
+			"statusBar/remoteIndicator": [
+				{
+					"command": "vscode-typescript-playground.startNewPlayground",
+					"group": "playground@0"
+				}
+			]
+		},
+		"views": {
+			"remote": [
+				{
+					"id": "vscode-typescript-playground.playground",
+					"name": "TypeScript Playground",
+					"group": "targets@1",
+					"remoteName": "playfs"
+				}
+			]
+		}
+		
+	},
+	"capabilities": {
+		"virtualWorkspaces": true,
+		"untrustedWorkspaces": {
+			"supported": true
+		}
+	},
+	"extensionKind": [
+		"ui"
+	],
+	"scripts": {
+		"test": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. --extensionTestsPath=dist/web/test/suite/index.js",
+		"pretest": "yarn run compile-web",
+		"vscode:prepublish": "yarn run package-web",
+		"compile-web": "webpack",
+		"watch-web": "webpack --watch",
+		"package-web": "webpack --mode production --devtool hidden-source-map",
+		"lint": "eslint src --ext ts",
+		"run-in-browser": "vscode-test-web --browserType=chromium --extensionDevelopmentPath=. ."
+	},
+	"devDependencies": {
+		"@types/mocha": "^9.0.0",
+		"@types/vscode": "^1.61.0",
+		"@types/webpack-env": "^1.16.2",
+		"@typescript-eslint/eslint-plugin": "^4.31.1",
+		"@typescript-eslint/parser": "^4.31.1",
+		"@vscode/test-web": "^0.0.13",
+		"assert": "^2.0.0",
+		"eslint": "^7.32.0",
+		"mocha": "^9.1.1",
+		"process": "^0.11.10",
+		"ts-loader": "^9.2.5",
+		"typescript": "^4.4.3",
+		"webpack": "^5.52.1",
+		"webpack-cli": "^4.8.0"
+	},
+	"dependencies": {
+		"path-browserify": "^1.0.1"
+	}
+}
