@@ -1,9 +1,9 @@
 {
 	"name": "vscode-typescript-playground",
+	"publisher": "Orta",
 	"displayName": "vscode-typescript-playground",
 	"description": "The TypeScript Playground in vscode",
 	"version": "0.0.1",
-	"enableProposedApi": true,
 	"preview": true,
 	"engines": {
 		"vscode": "^1.61.0"
@@ -11,24 +11,57 @@
 	"categories": [
 		"Other"
 	],
+	"license": "MIT",
 	"activationEvents": [
 		"onCommand:vscode-typescript-playground.startNewPlayground",
 		"onFileSystem:playfs",
-		"onView:vscode-typescript-playground.playground"
+		"onView:vscode-typescript-playground.playground",
+		"onUri",
+		"*"
 	],
 	"browser": "./dist/web/extension.js",
 	"contributes": {
+		"virtualWorkspaces": {
+			"menus": {
+				"continueOn": [
+					{
+						"command": "remoteHub.openOnDesktop",
+						"group": "navigation@0",
+						"when": "false && isWeb && remoteHub:hasVirtualFolders"
+					},
+					{
+						"command": "remoteHub.openOnWeb",
+						"group": "navigation@0",
+						"when": "false && !isWeb && remoteHub:hasVirtualFolders"
+					}
+				]
+			}
+		},
 		"commands": [
 			{
 				"command": "vscode-typescript-playground.startNewPlayground",
-				"title": "Start new Playground"
+				"title": "Start new TypeScript Playground"
+			},
+			{
+				"command": "vscode-typescript-playground.showSidebar",
+				"title": "Playground: Show Sidebar"
+			},
+			{
+				"command": "vscode-typescript-playground.openOnDesktop",
+				"title": "Open on Web",
+				"icon": "$(vm)"
+			},
+			{
+				"command": "vscode-typescript-playground.openOnWeb",
+				"title": "Open on Web",
+				"icon": "$(globe)"
 			}
 		],
 		"menus": {
 			"statusBar/remoteIndicator": [
 				{
 					"command": "vscode-typescript-playground.startNewPlayground",
-					"group": "playground@0"
+					"group": "virtualfs_44_vscode-vfs_0_local@1"
 				}
 			]
 		},
@@ -40,9 +73,38 @@
 					"group": "targets@1",
 					"remoteName": "playfs"
 				}
+			],
+			"ts-playground": [
+				{
+					"type": "webview",
+					"id": "vscode-typescript-playground.sidebarView",
+					"name": ""
+				}
 			]
-		}
-		
+
+		},
+		"viewsContainers": {
+			"activitybar": [
+			  {
+				"id": "ts-playground",
+				"title": "TypeScript Playground",
+				"icon": "resources/ts-logo.svg"
+			  }
+			]
+		  },
+	  
+		"resourceLabelFormatters": [
+			{
+				"scheme": "playfs",
+				"authority": "playfs",
+				"formatting": {
+					"label": "${path}",
+					"separator": "/",
+					"workspaceSuffix": "TypeScript Playground",
+					"stripPathStartingSeparator": true
+				}
+			}
+		]
 	},
 	"capabilities": {
 		"virtualWorkspaces": true,
@@ -73,13 +135,21 @@
 		"assert": "^2.0.0",
 		"eslint": "^7.32.0",
 		"mocha": "^9.1.1",
+		"prettier": "^2.4.1",
 		"process": "^0.11.10",
 		"ts-loader": "^9.2.5",
 		"typescript": "^4.4.3",
 		"webpack": "^5.52.1",
 		"webpack-cli": "^4.8.0"
 	},
+	"prettier": {
+		"printWidth": 140,
+		"semi": false
+	},
 	"dependencies": {
-		"path-browserify": "^1.0.1"
+		"@vscode/webview-ui-toolkit": "^0.8.4",
+		"path-browserify": "^1.0.1",
+		"@typescript/ata": "^0.9.3",
+		"sucrase": "^3.20.3"
 	}
 }

@@ -1,8 +1,8 @@
 // More or less directly C&P'd
- /*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------------------------
+*  Copyright (c) Microsoft Corporation. All rights reserved.
+*  Licensed under the MIT License. See License.txt in the project root for license information.
+*--------------------------------------------------------------------------------------------*/
 
 
 import * as path from 'path-browserify';
@@ -14,6 +14,7 @@ export class File implements vscode.FileStat {
     ctime: number;
     mtime: number;
     size: number;
+    permissions: vscode.FilePermission;
 
     name: string;
     data?: Uint8Array;
@@ -24,6 +25,7 @@ export class File implements vscode.FileStat {
         this.mtime = Date.now();
         this.size = 0;
         this.name = name;
+        this.permissions = 0
     }
 }
 
@@ -78,7 +80,7 @@ export class VFS implements vscode.FileSystemProvider {
         throw vscode.FileSystemError.FileNotFound();
     }
 
-    writeFile(uri: vscode.Uri, content: Uint8Array, options: { create: boolean, overwrite: boolean }): void {
+    writeFile(uri: vscode.Uri, content: Uint8Array, options: { create: boolean, overwrite: boolean, readonly?: true }): void {
         const basename = path.posix.basename(uri.path);
         const parent = this._lookupParentDirectory(uri);
         let entry = parent.entries.get(basename);
@@ -99,6 +101,7 @@ export class VFS implements vscode.FileSystemProvider {
         entry.mtime = Date.now();
         entry.size = content.byteLength;
         entry.data = content;
+        if (options.readonly) { entry.permissions = vscode.FilePermission.Readonly }
 
         this._fireSoon({ type: vscode.FileChangeType.Changed, uri });
     }
