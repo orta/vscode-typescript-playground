@@ -53,7 +53,7 @@ export type Entry = File | Directory;
 
 export class VFS implements vscode.FileSystemProvider {
 
-    root = new Directory('');
+    root = new Directory('/');
 
     // --- manage file metadata
 

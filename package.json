@@ -8,14 +8,17 @@
 	"engines": {
 		"vscode": "^1.61.0"
 	},
+	"enabledApiProposals": [
+		"contribViewsRemote"
+	],
 	"categories": [
 		"Other"
 	],
 	"license": "MIT",
 	"activationEvents": [
 		"onCommand:vscode-typescript-playground.startNewPlayground",
-		"onFileSystem:playfs",
 		"onView:vscode-typescript-playground.playground",
+		"onFileSystem:playfs",
 		"onUri",
 		"*"
 	],
@@ -43,8 +46,8 @@
 				"title": "Start new TypeScript Playground"
 			},
 			{
-				"command": "vscode-typescript-playground.showSidebar",
-				"title": "Playground: Show Sidebar"
+				"command": "vscode-typescript-playground.addPlaygroundToWorkspace",
+				"title": "Add TypeScript Playground to Workspace"
 			},
 			{
 				"command": "vscode-typescript-playground.openOnDesktop",
@@ -81,18 +84,16 @@
 					"name": ""
 				}
 			]
-
 		},
 		"viewsContainers": {
 			"activitybar": [
-			  {
-				"id": "ts-playground",
-				"title": "TypeScript Playground",
-				"icon": "resources/ts-logo.svg"
-			  }
+				{
+					"id": "ts-playground",
+					"title": "TypeScript Playground",
+					"icon": "resources/ts-logo.svg"
+				}
 			]
-		  },
-	  
+		},
 		"resourceLabelFormatters": [
 			{
 				"scheme": "playfs",
@@ -147,9 +148,11 @@
 		"semi": false
 	},
 	"dependencies": {
-		"@vscode/webview-ui-toolkit": "^0.8.4",
-		"path-browserify": "^1.0.1",
 		"@typescript/ata": "^0.9.3",
-		"sucrase": "^3.20.3"
+		"@vscode/webview-ui-toolkit": "^0.8.4",
+		"fetch-progress": "^1.3.0",
+		"path-browserify": "^1.0.1",
+		"sucrase": "^3.20.3",
+		"ts-debounce": "^4.0.0"
 	}
 }

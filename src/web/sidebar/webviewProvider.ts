@@ -37,6 +37,7 @@ import {
       webviewView.webview.html = this._getWebviewContent(webviewView.webview, this._extensionUri);
   
       webviewView.webview.onDidReceiveMessage(data => {
+        console.log("Recieved", { data })
         switch (data.type) {
           case 'colorSelected':
             {
@@ -69,7 +70,8 @@ import {
     private  _getWebviewContent(webview: Webview, extensionUri: Uri) {
       const mainUri = getUri(webview, extensionUri, ["dist", "web", "webview.js"]);
       const stylesUri = getUri(webview, extensionUri, ["src", "webview", "style.css"]);
-  
+      const version = "4.4.4"
+      const ts = "https://typescript.azureedge.net/cdn/" + version + "/typescript/lib/typescript.js"
       return `
               <!DOCTYPE html>
               <html lang="en">
@@ -77,6 +79,7 @@ import {
                       <meta charset="UTF-8">
                       <meta name="viewport" content="width=device-width, initial-scale=1.0">
                       <script src="${mainUri}"></script>
+                      <script src="${ts}"></script>
                       <link rel="stylesheet" href="${stylesUri}">
                   </head>
                   <body>

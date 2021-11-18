@@ -16,10 +16,7 @@
 		"activityBar.inactiveForeground": "#15202b99",
 		"activityBarBadge.background": "#1d8ca2",
 		"activityBarBadge.foreground": "#e7e7e7",
-		"editorGroup.border": "#abc624",
-		"panel.border": "#abc624",
 		"sash.hoverBorder": "#abc624",
-		"sideBar.border": "#abc624",
 		"statusBar.background": "#869b1c",
 		"statusBar.foreground": "#15202b",
 		"statusBarItem.hoverBackground": "#617014",
@@ -30,5 +27,6 @@
 		"titleBar.inactiveBackground": "#869b1c99",
 		"titleBar.inactiveForeground": "#15202b99"
 	},
-	"peacock.color": "#869b1c"
+	"peacock.color": "#869b1c",
+	"editor.formatOnSave": false
 }

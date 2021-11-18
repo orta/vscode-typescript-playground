@@ -19,6 +19,7 @@ const webExtensionConfig = {
 	entry: {
 		'extension': './src/web/extension.ts',
 		'webview': './src/webview/index.ts',
+		'tsworker': './src/tsworker/index.ts',
 		'test/suite/index': './src/web/test/suite/index.ts'
 	},
 	output: {
