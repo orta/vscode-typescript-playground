@@ -54,6 +54,13 @@ const webExtensionConfig = {
 		new webpack.ProvidePlugin({
 			process: 'process/browser', // provide a shim for the global `process` variable
 		}),
+		// The webview.js is running in a script context and has no access to `exports`, so drop it
+		new FindReplacePlugin({
+			src: 'dist/web/webview.js',
+			dest: 'dist/web/webview.js',
+			rules: [{ find: /= exports;/g, replace: () =>  "= {}" }]
+		})
+
 	],
 	externals: {
 		'vscode': 'commonjs vscode', // ignored because it doesn't exist
@@ -65,3 +72,35 @@ const webExtensionConfig = {
 };
 
 module.exports = [ webExtensionConfig ];
+
+// Modified from https://github.com/luwes/find-replace-webpack-plugin/ which is MIT, changes:
+// https://github.com/luwes/find-replace-webpack-plugin/pull/1
+
+const fs = require('fs');
+
+function FindReplacePlugin(options = {}) {
+	this.src = options.src;
+	this.dest = options.dest;
+	this.rules = options.rules;
+};
+
+FindReplacePlugin.prototype.apply = function(compiler) {
+	/** @type {import("webpack").Compiler} */
+	const c = compiler
+
+	const folder = compiler.options.context;
+	const src = path.join(folder, this.src);
+	const dest = path.join(folder, this.dest);
+
+	c.hooks.done.tap('find-replace', (statsData) => {
+			const stats = statsData.toJson();
+			let template = fs.readFileSync(src, 'utf8');
+			template = this.rules.reduce(
+				(template, rule) => template.replace(
+					rule.find, rule.replace.bind(global, stats)
+				),
+				template
+			);
+			fs.writeFileSync(dest, template);
+	});
+};

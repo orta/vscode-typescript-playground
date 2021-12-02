@@ -9,9 +9,6 @@ import { configureForEnv } from './workspace';
 import { setupTypeScriptVersionImport } from './playground/setUpTypeScriptCompiler';
 import { startTSWorker } from './playground/startTSWorker';
 
-
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
     console.log("---------------")
     console.log("started ts playground")
@@ -26,7 +23,7 @@ export function activate(context: vscode.ExtensionContext) {
     memFs.writeFile(vscode.Uri.parse(`playfs:/tsconfig.json`), toBuffer(compilerDefaults), { create: true, overwrite: true, readonly: true });
 
     console.log('Started playground');
-    
+
     let disposable2 = vscode.commands.registerCommand('vscode-typescript-playground.addPlaygroundToWorkspace', () => {
         vscode.workspace.updateWorkspaceFolders(0, 0, { uri: vscode.Uri.parse('playfs:/'), name: "TypeScript Playground" });
     })
@@ -42,6 +39,7 @@ export function activate(context: vscode.ExtensionContext) {
             });
         }
     });
+
 
     // startTSWorker(context.extensionUri, "4.4.4")
 
@@ -62,34 +60,39 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(disposable, disposable2);
 
-    const provider = new Sidebar(context.extensionUri);
+    const provider = new Sidebar(context.extensionUri, memFs);
+
+    const updateTSViews = (doc: vscode.TextDocument) => {
+        const diags = vscode.languages.getDiagnostics(doc.uri);
+        provider.updateTS(doc.getText(), diags)
+
+    }
+    const debouncedUpdateTSView = debounce(updateTSViews, 300);
 
     context.subscriptions.push(
-        vscode.window.registerWebviewViewProvider(Sidebar.viewType, provider),
+        vscode.window.registerWebviewViewProvider(Sidebar.viewType, provider, { webviewOptions: { retainContextWhenHidden: true } }),
         vscode.commands.registerCommand('vscode-typescript-playground.showSidebar', () => { }),
-        vscode.workspace.onDidChangeTextDocument((e) => {
-            const doc = e.document
-            
-            const updateJS = () => {
-
-            }
-
-            // const debounced = debounce(originalFunction, waitMilliseconds, options);
-            // const js = transpileModule(doc.getText(), {})
-            // provider.updateJS(js.outputText)
-
-        })
+        vscode.workspace.onDidChangeTextDocument((e) => debouncedUpdateTSView(e.document))
     );
 
-    const extensionId = 'Orta.vscode-typescript-playground';
+    // You can trigger via:
     // open vscode-insiders://Orta.vscode-typescript-playground/
+    const extensionId = 'Orta.vscode-typescript-playground';
 
     context.subscriptions.push(vscode.window.registerUriHandler({
         handleUri(uri: vscode.Uri) {
+            console.log("Handle URI: ", uri)
             const code = getInitialCode("Failed", uri)
             if (code !== "Failed") {
                 memFs.writeFile(vscode.Uri.parse(`playfs:/index.tsx`), toBuffer(code), { create: true, overwrite: true });
             }
+
+            // This needs TS which means it has to run in the worker
+
+            // const params = new URLSearchParams(params)
+            // const compilerDefaults = getTSConfigForConfig(getDefaultSandboxCompilerOptions(false, {}))
+            // memFs.writeFile(vscode.Uri.parse(`playfs:/tsconfig.json`), toBuffer(compilerDefaults), { create: true, overwrite: true, readonly: true });
+
         }
     }));
 
