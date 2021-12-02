@@ -54,25 +54,6 @@ export class Sidebar implements WebviewViewProvider {
     });
   }
 
-
-
-  //   public static show(extensionUri: Uri) {
-  // 	const column = window.activeTextEditor
-  // 		? window.activeTextEditor.viewColumn
-  // 		: undefined;
-
-  // 	const panel = window.createWebviewPanel(
-  // 		Sidebar.viewType,
-  // 		"Sidebar",
-  // 		{ viewColumn : ViewColumn.Beside, preserveFocus: true}, 
-  //           {enableScripts: true }
-  // 	);
-
-  // 	panel.webview.html = this._getWebviewContent(panel.webview, extensionUri);
-
-
-  // }
-
   private _getWebviewContent(webview: Webview, extensionUri: Uri) {
     const mainUri = getUri(webview, extensionUri, ["dist", "web", "webview.js"]);
     const stylesUri = getUri(webview, extensionUri, ["src", "webview", "style.css"]);
