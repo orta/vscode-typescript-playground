@@ -1,13 +1,8 @@
 import * as vscode from "vscode"
 import {
-  CancellationToken,
   Uri,
-  window,
   Webview,
-  WebviewView,
   WebviewViewProvider,
-  WebviewViewResolveContext,
-  ViewColumn
 } from "vscode";
 import { VFS } from "../../lib/VFS";
 import { getUri } from "./getUri";

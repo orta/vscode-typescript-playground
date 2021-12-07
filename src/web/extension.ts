@@ -8,6 +8,7 @@ import { Sidebar } from './sidebar/webviewProvider';
 import { configureForEnv } from './workspace';
 import { setupTypeScriptVersionImport } from './playground/setUpTypeScriptCompiler';
 import { startTSWorker } from './playground/startTSWorker';
+import { OpenInVisualEditorCodeLensProvider } from './tsconfig/codeActions';
 
 export function activate(context: vscode.ExtensionContext) {
     console.log("---------------")
@@ -27,6 +28,13 @@ export function activate(context: vscode.ExtensionContext) {
     let disposable2 = vscode.commands.registerCommand('vscode-typescript-playground.addPlaygroundToWorkspace', () => {
         vscode.workspace.updateWorkspaceFolders(0, 0, { uri: vscode.Uri.parse('playfs:/'), name: "TypeScript Playground" });
     })
+
+    let disposable3 = vscode.commands.registerCommand('vscode-typescript-playground.openVisualTSConfigEditor', () => {
+        vscode.commands.executeCommand('workbench.action.openSettings', { target: "MEMORY", query: "@ext:Orta.tspl" })
+    })
+
+    const codeEditor = new OpenInVisualEditorCodeLensProvider()
+    const codelensD = vscode.languages.registerCodeLensProvider({ pattern: '/tsconfig.json' }, codeEditor)
 
     let disposable = vscode.commands.registerCommand('vscode-typescript-playground.startNewPlayground', () => {
         const isDev = true
@@ -70,6 +78,8 @@ export function activate(context: vscode.ExtensionContext) {
     const debouncedUpdateTSView = debounce(updateTSViews, 300);
 
     context.subscriptions.push(
+        disposable3,
+        codelensD,
         vscode.window.registerWebviewViewProvider(Sidebar.viewType, provider, { webviewOptions: { retainContextWhenHidden: true } }),
         vscode.commands.registerCommand('vscode-typescript-playground.showSidebar', () => { }),
         vscode.workspace.onDidChangeTextDocument((e) => debouncedUpdateTSView(e.document))

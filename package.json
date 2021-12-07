@@ -3,7 +3,7 @@
   "publisher": "Orta",
   "displayName": "N/A",
   "description": "-",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "preview": true,
   "engines": {
     "vscode": "^1.61.0"
@@ -44,6 +44,10 @@
       {
         "command": "vscode-typescript-playground.startNewPlayground",
         "title": "Start new TypeScript Playground"
+      },
+      {
+        "command": "vscode-typescript-playground.openVisualTSConfigEditor",
+        "title": "Open TSConfig Visual Editor"
       },
       {
         "command": "vscode-typescript-playground.addPlaygroundToWorkspace",
@@ -105,7 +109,41 @@
           "stripPathStartingSeparator": true
         }
       }
-    ]
+    ],
+    "configuration": {
+      "title": "TypeScript Playground",
+      "order": 0,
+      "properties": {
+        "typescript.playground.target": {
+          "type": "string",
+          "default": "es2017",
+          "enum": [
+            "es3",
+            "es5",
+            "es2015",
+            "es2016",
+            "es2017",
+            "es2018",
+            "es2019",
+            "es2020"
+          ],
+          "description": "Set the JavaScript language version for emitted JavaScript and include compatible library declarations.."
+        },
+        "typescript.playground.jsx": {
+          "type": "string",
+          "default": "react",
+          "enum": [
+            "none",
+            "preserve",
+            "react",
+            "react-native",
+            "reactjsx",
+            "reactjsx-dev"
+          ],
+          "description": "Specify what JSX code is generated.."
+        }
+      }
+    }
   },
   "capabilities": {
     "virtualWorkspaces": true,
