@@ -4,6 +4,7 @@
 *  Licensed under the MIT License. See License.txt in the project root for license information.
 *--------------------------------------------------------------------------------------------*/
 
+const log = true
 
 import * as path from 'path-browserify';
 import * as vscode from 'vscode';
@@ -67,6 +68,7 @@ export class VFS implements vscode.FileSystemProvider {
         for (const [name, child] of entry.entries) {
             result.push([name, child.type]);
         }
+        if (log) console.log("readDirectory", uri.fsPath, result)
         return result;
     }
 
@@ -75,12 +77,15 @@ export class VFS implements vscode.FileSystemProvider {
     readFile(uri: vscode.Uri): Uint8Array {
         const data = this._lookupAsFile(uri, false).data;
         if (data) {
+            if (log) console.log("readFile", uri.fsPath, data)
             return data;
         }
         throw vscode.FileSystemError.FileNotFound();
     }
 
     writeFile(uri: vscode.Uri, content: Uint8Array, options: { create: boolean, overwrite: boolean, readonly?: true }): void {
+        if (log) console.log("writeFile", uri.fsPath)
+
         const basename = path.posix.basename(uri.path);
         const parent = this._lookupParentDirectory(uri);
         let entry = parent.entries.get(basename);

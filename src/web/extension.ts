@@ -48,7 +48,6 @@ export function activate(context: vscode.ExtensionContext) {
         }
     });
 
-
     // startTSWorker(context.extensionUri, "4.4.4")
 
     // setupTypeScriptVersionImport("4.4.4", {
@@ -73,6 +72,12 @@ export function activate(context: vscode.ExtensionContext) {
     const updateTSViews = (doc: vscode.TextDocument) => {
         const diags = vscode.languages.getDiagnostics(doc.uri);
         provider.updateTS(doc.getText(), diags)
+
+        // console.log("Update")
+        vscode.commands.executeCommand('typescript.tsserverRequest', 'emit-output', { file: "^/playfs/index.tsx" }).then(r => {
+            console.log("Sent")
+            console.log(r)
+        })
 
     }
     const debouncedUpdateTSView = debounce(updateTSViews, 300);
