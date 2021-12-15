@@ -5,11 +5,15 @@ import { getTSConfigForConfig } from "./playground/exporter"
 import { getCompilerOptionsFromParams, getDefaultSandboxCompilerOptions } from "./sandbox/compilerOptions"
 import { getInitialCode } from "./sandbox/getInitialCode"
 import { Sidebar } from "./sidebar/webviewProvider"
-import { configureForEnv } from "./workspace"
+import { configureForEnv, isWeb } from "./workspace"
 import { OpenInVisualEditorCodeLensProvider } from "./tsconfig/codeActions"
+import { createURLQueryWithCompilerOptions } from "./sandbox/compilerOptions"
+
 // import { LocalStorageService } from "./storage"
 import { VFS } from "../lib/VFS"
 import { initialCode } from "./initialCode"
+
+let originalParams = ""
 
 export function activate(context: vscode.ExtensionContext) {
   console.log("started ts playground")
@@ -47,10 +51,24 @@ export function activate(context: vscode.ExtensionContext) {
     }
   })
 
-  const updateTSViews = (doc: vscode.TextDocument) => {
-    const diags = vscode.languages.getDiagnostics(doc.uri)
-    sidebar.updateTS(doc.getText(), diags)
+  const updateTSViews = (doc: vscode.TextDocument, suppressHashChange?: boolean) => {
+    const isTSishFile = doc.uri.path.endsWith(".ts") || doc.uri.path.endsWith(".tsx")
+    if (!isTSishFile) {
+      return
+    }
 
+    const code = doc.getText()
+    const diags = vscode.languages.getDiagnostics(doc.uri)
+    sidebar.updateTS(code, diags)
+
+    // TODO: This doesn't work because we're in a worker
+    if (!suppressHashChange && isWeb) {
+      const defaultCompilerOptions = getDefaultSandboxCompilerOptions(false, {})
+      const currentCompilerOptions = {}
+      const query = createURLQueryWithCompilerOptions({ code, defaultCompilerOptions, originalParams, currentCompilerOptions })
+      const fullURL = `${document.location.protocol}//${document.location.host}${document.location.pathname}${query}`
+      window.history.replaceState({}, "", fullURL)
+    }
     // vscode.commands.executeCommand("typescript.tsserverRequest", "emit-output", { file: "^/playfs/index.tsx" }).then((r) => {
     //   console.log("Sent")
     //   console.log(r)
@@ -61,7 +79,8 @@ export function activate(context: vscode.ExtensionContext) {
   const sidebar = new Sidebar(context.extensionUri, () => {
     vscode.workspace.textDocuments.forEach((d) => {
       if (d.fileName.endsWith("index.tsx")) {
-        updateTSViews(d)
+        const suppressHashChange = true
+        updateTSViews(d, suppressHashChange)
       }
     })
   })
@@ -73,6 +92,8 @@ export function activate(context: vscode.ExtensionContext) {
   const uriHandlerD = vscode.window.registerUriHandler({
     handleUri(uri: vscode.Uri) {
       console.log("Handle URI: ", uri)
+      originalParams = uri.query
+
       const code = getInitialCode("Failed", uri)
       const localURL = vscode.Uri.parse(`playfs:/index.tsx`)
       if (code !== "Failed") {
@@ -110,7 +131,9 @@ export function activate(context: vscode.ExtensionContext) {
     openEditorD,
     codelensD,
     vscode.window.registerWebviewViewProvider(Sidebar.viewType, sidebar, { webviewOptions: { retainContextWhenHidden: true } }),
-    vscode.commands.registerCommand("vscode-typescript-playground.showSidebar", () => {}),
+    vscode.commands.registerCommand("vscode-typescript-playground.showSidebar", () => {
+      vscode.commands.executeCommand("workbench.view.extension.ts-playground")
+    }),
     vscode.workspace.onDidChangeTextDocument((e) => debouncedUpdateTSView(e.document)),
     uriHandlerD
   )

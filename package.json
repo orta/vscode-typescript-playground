@@ -3,7 +3,7 @@
   "publisher": "Orta",
   "displayName": "TypeScript Playground",
   "description": "-",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "preview": true,
   "engines": {
     "vscode": "^1.61.0"
