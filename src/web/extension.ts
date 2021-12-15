@@ -13,6 +13,7 @@ import { createURLQueryWithCompilerOptions } from "./sandbox/compilerOptions"
 import { VFS } from "../lib/VFS"
 import { initialCode } from "./initialCode"
 import { Example } from "../webview/getExamplesJSON"
+import { ExamplesTreeProvider } from "./examples/examplesTreeView"
 
 let originalParams = ""
 const urlForSite = "https://insiders.vscode.dev/tsplay/"
@@ -26,7 +27,7 @@ export function activate(context: vscode.ExtensionContext) {
   memFs.writeFile(vscode.Uri.parse(`playfs:/index.tsx`), toBuffer(initialCode), { create: true, overwrite: true })
 
   const compilerDefaults = getTSConfigForConfig(getDefaultSandboxCompilerOptions(false, {}))
-  memFs.writeFile(vscode.Uri.parse(`playfs:/tsconfig.json`), toBuffer(compilerDefaults), { create: true, overwrite: true, readonly: true })
+  memFs.writeFile(vscode.Uri.parse(`playfs:/tsconfig.json`), toBuffer(compilerDefaults), { create: true, overwrite: true })
 
   console.log("Started playground")
 
@@ -53,7 +54,7 @@ export function activate(context: vscode.ExtensionContext) {
   const shareButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0)
   shareButton.command = "vscode-typescript-playground.copyURLForPlayground"
   shareButton.text = "Copy Playground URL"
-  shareButton.color = new vscode.ThemeColor("textLink.foreground")
+  // shareButton.color = new vscode.ThemeColor("textLink.foreground")
   shareButton.tooltip = "Clicking this button will copy the URL with your changes for sharing with others."
   shareButton.show()
 
@@ -124,7 +125,6 @@ export function activate(context: vscode.ExtensionContext) {
 
   const uriHandlerD = vscode.window.registerUriHandler({
     handleUri(uri: vscode.Uri) {
-      console.log("Handle URI: ", uri)
       originalParams = uri.query
 
       const code = getInitialCode("Failed", uri)
@@ -139,19 +139,22 @@ export function activate(context: vscode.ExtensionContext) {
       vscode.commands.executeCommand("workbench.view.extension.ts-playground")
 
       // TODO: This needs TS which means it has to run in the worker to be accurate to the playground
-      const fakeTS = { optionDeclarations: [] } as any
+      // const fakeTS = { optionDeclarations: [] } as any
 
-      const params = new URLSearchParams(uri.query)
-      const defaults = getDefaultSandboxCompilerOptions(false, {})
-      const paramConfig = getCompilerOptionsFromParams(defaults, fakeTS, params)
-      const compilerOpts = getTSConfigForConfig(paramConfig)
-      memFs.writeFile(vscode.Uri.parse(`playfs:/tsconfig.json`), toBuffer(compilerOpts), {
-        create: true,
-        overwrite: true,
-        readonly: true,
-      })
+      // const params = new URLSearchParams(uri.query)
+      // const defaults = getDefaultSandboxCompilerOptions(false, {})
+      // const paramConfig = getCompilerOptionsFromParams(defaults, fakeTS, params)
+      // const compilerOpts = getTSConfigForConfig(paramConfig)
+      // memFs.writeFile(vscode.Uri.parse(`playfs:/tsconfig.json`), toBuffer(compilerOpts), {
+      //   create: true,
+      //   overwrite: true,
+      //   readonly: true,
+      // })
     },
   })
+
+  const nodeDependenciesProvider = new ExamplesTreeProvider()
+  const tree = vscode.window.registerTreeDataProvider("vscode-typescript-playground.examplesTreeView", nodeDependenciesProvider)
 
   context.subscriptions.push(
     startNewD,
@@ -165,7 +168,8 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.workspace.onDidChangeTextDocument((e) => debouncedUpdateTSView(e.document)),
     uriHandlerD,
     shareButton,
-    copyURLD
+    copyURLD,
+    tree
   )
 }
 

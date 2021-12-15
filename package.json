@@ -3,7 +3,7 @@
   "publisher": "Orta",
   "displayName": "TypeScript Playground",
   "description": "-",
-  "version": "0.0.8",
+  "version": "0.0.12",
   "preview": true,
   "engines": {
     "vscode": "^1.61.0"
@@ -86,6 +86,12 @@
           "type": "webview",
           "id": "vscode-typescript-playground.sidebarView",
           "name": ""
+        }
+      ],
+      "explorer": [
+        {
+          "id": "vscode-typescript-playground.examplesTreeView",
+          "name": "Playground Examples"
         }
       ]
     },
