@@ -1,12 +1,18 @@
 import "@vscode/webview-ui-toolkit/dist/toolkit"
-import { createDesignSystem } from "./createDesignSystem";
+
+import { createSystem, createVirtualCompilerHost } from "./vendor/tsvfs"
+
+// declare const tsvfs: typeof import("@typescript/vfs")
+
+import { createDesignSystem } from "./createDesignSystem"
 
 type VSCode = {
   // postMessage<T extends Message = Message>(message: T): void;
-  postMessage(message: any): void;
-  getState(): any;
-  setState(state: any): void;
-};
+  postMessage(message: any): void
+  getState(): any
+  setState(state: any): void
+}
+
 declare function acquireVsCodeApi(): VSCode
 
 const thisTS = () => {
@@ -15,12 +21,12 @@ const thisTS = () => {
 }
 
 // Get access to the VS Code API from within the webview context
-const vscode = acquireVsCodeApi();
+const vscode = acquireVsCodeApi()
 // @ts-ignore
-window.addEventListener("load", main);
+window.addEventListener("load", main)
 
 function main() {
-  setVSCodeMessageListener();
+  setVSCodeMessageListener()
 
   // Make a loop checking for when we have access to the typescript API in the global scope
   const interval = setInterval(() => {
@@ -32,27 +38,43 @@ function main() {
   }, 300)
 }
 
-
 function setVSCodeMessageListener() {
   // @ts-ignore
   window.addEventListener("message", (event) => {
-    const command = event.data.command;
+    const command = event.data.command
     console.log(event.data)
 
     switch (command) {
       case "updateTS":
         const ts = thisTS()
-        if (!ts) { return }
+        if (!ts) {
+          return
+        }
 
         const ds = createDesignSystem(ts)
-        let result = ts.transpileModule(event.data.ts, { compilerOptions: { module: ts.ModuleKind.CommonJS } });
+        // let result = ts.transpileModule(event.data.ts, { compilerOptions: { module: ts.ModuleKind.CommonJS } })
+        const opts = { noLib: true, declaration: true }
+
+        const fsMap = new Map() // await tsvfs.createDefaultMapFromCDN(compilerOptions, ts.version, true, ts)
+        fsMap.set("index.tsx", event.data.ts)
+
+        const system = createSystem(fsMap)
+        const host = createVirtualCompilerHost(system, opts, ts)
+
+        const program = ts.createProgram({
+          rootNames: [...fsMap.keys()],
+          options: opts,
+          host: host.compilerHost,
+        })
+
+        program.emit()
 
         // js
         const v1 = document.getElementById("view-1")
         if (v1) {
           const jsDS = ds(v1)
           jsDS.clear()
-          jsDS.code(result.outputText)
+          jsDS.code(fsMap.get("index.js"))
         }
 
         // dts
@@ -61,7 +83,7 @@ function setVSCodeMessageListener() {
           // v2.textContent = result.outputText
           const jsDS = ds(v2)
           jsDS.clear()
-          jsDS.code(".d.ts not supported right now, sorry")
+          jsDS.code(fsMap.get("index.d.ts"))
         }
 
         // diags
@@ -75,9 +97,9 @@ function setVSCodeMessageListener() {
           if (event.data.diags.length) {
             errorTab.innerHTML = `ERRORS <vscode-badge appearance="secondary">${event.data.diags.length}</vscode-badge>`
             const diags = event.data.diags as import("vscode").Diagnostic[]
-            const tsDiags = diags.filter(d => d.source === "ts")
+            const tsDiags = diags.filter((d) => d.source === "ts")
 
-            const tsStyleDiags = tsDiags.map(d => {
+            const tsStyleDiags = tsDiags.map((d) => {
               const tsd: import("typescript").DiagnosticRelatedInformation = {
                 category: markerToDiagSeverity(d.severity as any),
                 code: d.code as any,
@@ -86,7 +108,7 @@ function setVSCodeMessageListener() {
                 // @ts-ignore the JSONification process destroys the class
                 length: d.range[1].character - d.range[0].character,
                 // @ts-ignore
-                start: d.range[1].character
+                start: d.range[1].character,
               }
               return tsd
             })
@@ -96,12 +118,10 @@ function setVSCodeMessageListener() {
           }
         }
 
-
-        break;
+        break
     }
-  });
+  })
 }
-
 
 const markerToDiagSeverity = (markerSev: string) => {
   switch (markerSev) {
