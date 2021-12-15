@@ -1,19 +1,9 @@
 import "@vscode/webview-ui-toolkit/dist/toolkit"
 
 import { createSystem, createVirtualCompilerHost } from "./vendor/tsvfs"
-
-// declare const tsvfs: typeof import("@typescript/vfs")
-
 import { createDesignSystem } from "./createDesignSystem"
-
-type VSCode = {
-  // postMessage<T extends Message = Message>(message: T): void;
-  postMessage(message: any): void
-  getState(): any
-  setState(state: any): void
-}
-
-declare function acquireVsCodeApi(): VSCode
+import { setupDocsView } from "./docsView"
+import { vscode } from "./vscodeWorker"
 
 const thisTS = () => {
   // @ts-ignore
@@ -21,12 +11,11 @@ const thisTS = () => {
 }
 
 // Get access to the VS Code API from within the webview context
-const vscode = acquireVsCodeApi()
-// @ts-ignore
 window.addEventListener("load", main)
 
 function main() {
   setVSCodeMessageListener()
+  setupDocsView()
 
   // Make a loop checking for when we have access to the typescript API in the global scope
   const interval = setInterval(() => {
@@ -42,8 +31,6 @@ function setVSCodeMessageListener() {
   // @ts-ignore
   window.addEventListener("message", (event) => {
     const command = event.data.command
-    console.log(event.data)
-
     switch (command) {
       case "updateTS":
         const ts = thisTS()

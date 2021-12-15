@@ -1,12 +1,18 @@
 import * as vscode from "vscode"
 import { Uri, Webview, WebviewViewProvider } from "vscode"
+import { Example } from "../../webview/getExamplesJSON"
 import { getUri } from "./getUri"
+
+type SidebarDelegate = {
+  ready: () => void
+  updateIndex: (code: string, example: Example) => void
+}
 
 export class Sidebar implements WebviewViewProvider {
   public static readonly viewType = "vscode-typescript-playground.sidebarView"
   private _view?: vscode.WebviewView
 
-  constructor(private readonly _extensionUri: vscode.Uri, private ready: () => void) {}
+  constructor(private readonly _extensionUri: vscode.Uri, private delegate: SidebarDelegate) {}
 
   public resolveWebviewView(webviewView: vscode.WebviewView, context: vscode.WebviewViewResolveContext, _token: vscode.CancellationToken) {
     this._view = webviewView
@@ -17,11 +23,14 @@ export class Sidebar implements WebviewViewProvider {
     }
 
     webviewView.webview.html = this._getWebviewContent(webviewView.webview, this._extensionUri)
-
     webviewView.webview.onDidReceiveMessage((data) => {
       switch (data.msg) {
         case "ts-ready": {
-          this.ready()
+          this.delegate.ready()
+          break
+        }
+        case "update-index": {
+          this.delegate.updateIndex(data.code, data.example)
           break
         }
       }
@@ -48,9 +57,11 @@ export class Sidebar implements WebviewViewProvider {
                   <vscode-panel-tab id="tab-1">.JS</vscode-panel-tab>
                   <vscode-panel-tab id="tab-2">.D.TS</vscode-panel-tab>
                   <vscode-panel-tab id="tab-3">ERRORS</vscode-panel-tab>
+                  <vscode-panel-tab id="tab-4">DOCS</vscode-panel-tab>
                   <vscode-panel-view id="view-1">Downloading TypeScript...</vscode-panel-view>
                   <vscode-panel-view id="view-2">Downloading TypeScript...</vscode-panel-view>
                   <vscode-panel-view id="view-3">Downloading TypeScript...</vscode-panel-view>
+                  <vscode-panel-view id="docs-container"><div>Downloading Docs...</div></vscode-panel-view>
                 </vscode-panels>
                   </body>
               </html>

@@ -12,8 +12,10 @@ import { createURLQueryWithCompilerOptions } from "./sandbox/compilerOptions"
 // import { LocalStorageService } from "./storage"
 import { VFS } from "../lib/VFS"
 import { initialCode } from "./initialCode"
+import { Example } from "../webview/getExamplesJSON"
 
 let originalParams = ""
+const urlForSite = "https://insiders.vscode.dev/tsplay/"
 
 export function activate(context: vscode.ExtensionContext) {
   console.log("started ts playground")
@@ -35,6 +37,25 @@ export function activate(context: vscode.ExtensionContext) {
   let openEditorD = vscode.commands.registerCommand("vscode-typescript-playground.openVisualTSConfigEditor", () => {
     vscode.commands.executeCommand("workbench.action.openSettings", { target: "MEMORY", query: "@ext:Orta.tspl" })
   })
+
+  let copyURLD = vscode.commands.registerCommand("vscode-typescript-playground.copyURLForPlayground", () => {
+    const code = String(memFs.readFile(vscode.Uri.parse(`playfs:/index.tsx`)))
+    const defaultCompilerOptions = getDefaultSandboxCompilerOptions(false, {})
+    const currentCompilerOptions = {}
+    const query = createURLQueryWithCompilerOptions({ code, defaultCompilerOptions, originalParams, currentCompilerOptions })
+    const fullURL = `${urlForSite}${query}`
+    // window.history.replaceState({}, "", fullURL)
+
+    vscode.env.clipboard.writeText(fullURL)
+    vscode.window.showInformationMessage("Copied to clipboard")
+  })
+
+  const shareButton = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 0)
+  shareButton.command = "vscode-typescript-playground.copyURLForPlayground"
+  shareButton.text = "Copy Playground URL"
+  shareButton.color = new vscode.ThemeColor("textLink.foreground")
+  shareButton.tooltip = "Clicking this button will copy the URL with your changes for sharing with others."
+  shareButton.show()
 
   const codeEditor = new OpenInVisualEditorCodeLensProvider()
   const codelensD = vscode.languages.registerCodeLensProvider({ pattern: "/tsconfig.json" }, codeEditor)
@@ -63,11 +84,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     // TODO: This doesn't work because we're in a worker
     if (!suppressHashChange && isWeb) {
-      const defaultCompilerOptions = getDefaultSandboxCompilerOptions(false, {})
-      const currentCompilerOptions = {}
-      const query = createURLQueryWithCompilerOptions({ code, defaultCompilerOptions, originalParams, currentCompilerOptions })
-      const fullURL = `${document.location.protocol}//${document.location.host}${document.location.pathname}${query}`
-      window.history.replaceState({}, "", fullURL)
+      //
     }
     // vscode.commands.executeCommand("typescript.tsserverRequest", "emit-output", { file: "^/playfs/index.tsx" }).then((r) => {
     //   console.log("Sent")
@@ -76,14 +93,30 @@ export function activate(context: vscode.ExtensionContext) {
   }
   const debouncedUpdateTSView = debounce(updateTSViews, 300)
 
-  const sidebar = new Sidebar(context.extensionUri, () => {
+  const ready = () => {
     vscode.workspace.textDocuments.forEach((d) => {
       if (d.fileName.endsWith("index.tsx")) {
         const suppressHashChange = true
         updateTSViews(d, suppressHashChange)
       }
     })
-  })
+  }
+
+  const updateIndex = (code: string, example: Example) => {
+    memFs.writeFile(vscode.Uri.parse(`playfs:/index.tsx`), toBuffer(code), { create: true, overwrite: true })
+    showIndexPage()
+  }
+
+  const sidebar = new Sidebar(context.extensionUri, { ready, updateIndex })
+
+  const showIndexPage = () => {
+    const localURL = vscode.Uri.parse(`playfs:/index.tsx`)
+    vscode.workspace.openTextDocument(localURL).then((doc) => {
+      if (doc) {
+        vscode.window.showTextDocument(doc, { preview: false })
+      }
+    })
+  }
 
   // You can trigger via:
   // open vscode-insiders://Orta.vscode-typescript-playground/
@@ -100,12 +133,7 @@ export function activate(context: vscode.ExtensionContext) {
         memFs.writeFile(localURL, toBuffer(code), { create: true, overwrite: true })
       }
 
-      // Show the main index
-      vscode.workspace.openTextDocument(localURL).then((doc) => {
-        if (doc) {
-          vscode.window.showTextDocument(doc, { preview: false })
-        }
-      })
+      showIndexPage()
 
       // Show the right sidebar
       vscode.commands.executeCommand("workbench.view.extension.ts-playground")
@@ -135,7 +163,9 @@ export function activate(context: vscode.ExtensionContext) {
       vscode.commands.executeCommand("workbench.view.extension.ts-playground")
     }),
     vscode.workspace.onDidChangeTextDocument((e) => debouncedUpdateTSView(e.document)),
-    uriHandlerD
+    uriHandlerD,
+    shareButton,
+    copyURLD
   )
 }
 
