@@ -2,7 +2,7 @@ import * as vscode from "vscode"
 import { Section, Example, ExamplesOverview, getExamples } from "../../webview/getExamplesJSON"
 
 const examplesToTree = (response: ExamplesOverview) => {
-  const tree: any = {}
+  const tree: Record<string, Item> = {}
 
   //   "3-7": {
   //     "Fixits": {
@@ -23,77 +23,77 @@ const examplesToTree = (response: ExamplesOverview) => {
   //       },
   //       "const-to-let": {
 
+  const item = (name: string, state: vscode.TreeItemCollapsibleState) => new Item(name, name, {}, state)
+
   response.examples.forEach((ex: any) => {
     for (let index = 0; index < ex.path.length; index++) {
       // Setup
       let top = ex.path[0]
       if (top) {
-        tree[top] ||= {}
+        tree[top] ||= item(top, vscode.TreeItemCollapsibleState.Collapsed)
       }
       let mid = ex.path[1]
       if (mid) {
-        tree[top][mid] ||= {}
+        tree[top].children[mid] ||= item(mid, vscode.TreeItemCollapsibleState.Collapsed)
       }
       let end = ex.path[2]
       if (end) {
-        tree[top][mid][end] ||= {}
+        tree[top].children[mid].children[end] ||= item(end, vscode.TreeItemCollapsibleState.Expanded)
       }
 
       // Adding example
       if (end) {
-        tree[top][mid][end][ex.id] = ex
+        tree[top].children[mid].children[end]
         return
       }
       if (mid) {
-        tree[top][mid][ex.id] = ex
+        tree[top].children[mid].examples.push(ex)
         return
       }
-      tree[top][ex.id] = ex
+      tree[top].examples.push(ex)
     }
   })
   return tree
 }
 
-export class ExamplesTreeProvider implements vscode.TreeDataProvider<any> {
+export class ExamplesTreeProvider implements vscode.TreeDataProvider<Item> {
   private _onDidChangeTreeData: vscode.EventEmitter<any> = new vscode.EventEmitter<any>()
   readonly onDidChangeTreeData: vscode.Event<any> = this._onDidChangeTreeData.event
 
-  private tree: any
+  private tree!: Record<string, Item>
+
   constructor() {
     getExamples().then((examples) => {
       this.tree = examplesToTree(examples)
-      console.log("-------------", this.tree)
+      console.log({ tree: this.tree })
       this._onDidChangeTreeData.fire(this.tree)
     })
   }
 
-  getTreeItem(element: any): vscode.TreeItem {
+  getTreeItem(element: Item): vscode.TreeItem {
     if (!element) {
-      return new Item("Downloading", "", vscode.TreeItemCollapsibleState.None)
+      return new Item("Downloading", "", {}, vscode.TreeItemCollapsibleState.None)
     }
-
-    if ("hash" in element) {
-      return new Item(element.title, element.id, vscode.TreeItemCollapsibleState.None)
-    } else {
-      return new Item(element, element, vscode.TreeItemCollapsibleState.Expanded)
-    }
+    return element
   }
 
-  getChildren(element?: any): Thenable<vscode.TreeItem[]> {
+  getChildren(element?: Item) {
+    let children: Item[] = []
     if (!element && this.tree) {
       // Top level
       const keys = Object.keys(this.tree)
-      return Promise.resolve(keys.map((k) => new Item(k, k, vscode.TreeItemCollapsibleState.Expanded)))
-    } else if (!element) {
-      // NOOP for empty
-      return Promise.resolve([])
+      children = keys.map((k) => this.tree[k]).reverse()
+    } else if (element && element.examples.length) {
+      children = element.examples.map((e) => {
+        const item = new Item(e.name, e.name, {}, vscode.TreeItemCollapsibleState.None)
+        item.iconPath = new vscode.ThemeIcon("file")
+        item.command = { title: "Open", command: "vscode-typescript-playground.openExampleWithID", arguments: [e.id] }
+        return item
+      })
+    } else if (element) {
+      children = element.kids()
     }
-
-    if ("hash" in element) {
-      return Promise.resolve([])
-    } else {
-      return Promise.resolve([new Item(element, element, vscode.TreeItemCollapsibleState.Expanded)])
-    }
+    return Promise.resolve(children)
   }
 }
 
@@ -101,11 +101,19 @@ class Item extends vscode.TreeItem {
   constructor(
     public readonly label: string,
     private readonly oneliner: string,
+    public readonly children: Record<string, Item>,
     public readonly collapsibleState: vscode.TreeItemCollapsibleState
   ) {
     super(label, collapsibleState)
     this.tooltip = `${this.label} ${this.oneliner}`
-    this.description = this.oneliner
+    // this.description = this.oneliner
+  }
+
+  public examples: Example[] = []
+
+  kids() {
+    const keys = Object.keys(this.children)
+    return keys.map((k) => this.children[k])
   }
 
   //   iconPath = {

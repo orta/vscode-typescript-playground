@@ -14,6 +14,7 @@ import { VFS } from "../lib/VFS"
 import { initialCode } from "./initialCode"
 import { Example } from "../webview/getExamplesJSON"
 import { ExamplesTreeProvider } from "./examples/examplesTreeView"
+import { getExampleSourceCode } from "./examples/getExampleSourceCode"
 
 let originalParams = ""
 const urlForSite = "https://insiders.vscode.dev/tsplay/"
@@ -37,6 +38,13 @@ export function activate(context: vscode.ExtensionContext) {
 
   let openEditorD = vscode.commands.registerCommand("vscode-typescript-playground.openVisualTSConfigEditor", () => {
     vscode.commands.executeCommand("workbench.action.openSettings", { target: "MEMORY", query: "@ext:Orta.tspl" })
+  })
+
+  let openExampleWithIDD = vscode.commands.registerCommand("vscode-typescript-playground.openExampleWithID", async (id: string) => {
+    const content = await getExampleSourceCode("en", id)
+    if (content.code) {
+      updateIndex(content.code)
+    }
   })
 
   let copyURLD = vscode.commands.registerCommand("vscode-typescript-playground.copyURLForPlayground", () => {
@@ -103,7 +111,7 @@ export function activate(context: vscode.ExtensionContext) {
     })
   }
 
-  const updateIndex = (code: string, example: Example) => {
+  const updateIndex = (code: string, example?: Example) => {
     memFs.writeFile(vscode.Uri.parse(`playfs:/index.tsx`), toBuffer(code), { create: true, overwrite: true })
     showIndexPage()
   }
@@ -169,7 +177,8 @@ export function activate(context: vscode.ExtensionContext) {
     uriHandlerD,
     shareButton,
     copyURLD,
-    tree
+    tree,
+    openExampleWithIDD
   )
 }
 
